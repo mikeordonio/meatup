@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "meatup-macatoc",
+    "site": "meatup-fire",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "cleanUrls": true,
