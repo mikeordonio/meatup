@@ -83,12 +83,12 @@
           <p>Monitor stock levels and update quantities without changing your product listings.</p>
         </ion-card-content>
       </ion-card>
-      <ion-list v-if="products.length">
-        <ion-item v-for="product in products" :key="product.id">
-          <ion-label>
+      <div v-if="products.length" class="inventory-list">
+        <article v-for="product in products" :key="product.id" class="inventory-item">
+          <div class="inventory-product">
             <h2>{{ product.name }}</h2>
             <p>{{ product.category }} · Minimum {{ product.minStockKg }} kg</p>
-          </ion-label>
+          </div>
           <ion-input
             v-model.number="product.stockKg"
             class="stock-input"
@@ -99,11 +99,11 @@
             fill="outline"
             @ion-blur="saveInventory(product)"
           />
-          <ion-chip slot="end" :color="product.stockKg <= product.minStockKg ? 'warning' : 'success'">
+          <ion-chip :color="product.stockKg <= product.minStockKg ? 'warning' : 'success'">
             {{ product.stockKg <= product.minStockKg ? 'Low stock' : 'In stock' }}
           </ion-chip>
-        </ion-item>
-      </ion-list>
+        </article>
+      </div>
       <p v-else class="state">Add products first so their inventory can be tracked here.</p>
     </template>
 
@@ -183,14 +183,14 @@
 
       <template v-else-if="isAdmin && section === 'reports'">
         <div class="report-actions">
-          <ion-button fill="outline" @click="loadData">Refresh analytics</ion-button>
+          <ion-button fill="outline" @click="loadData">Refresh Analytics</ion-button>
           <ion-button @click="downloadExcelReport">Download Excel</ion-button>
           <ion-button @click="downloadPdfReport">Download PDF</ion-button>
         </div>
         <div class="report-grid">
             <ion-card>
             <ion-card-header>
-              <ion-card-title>Order health</ion-card-title>
+              <ion-card-title>Order Health</ion-card-title>
               <ion-card-subtitle>Current distribution by status</ion-card-subtitle>
             </ion-card-header>
             <ion-card-content>
@@ -211,8 +211,8 @@
           </ion-card>
           <ion-card>
             <ion-card-header>
-              <ion-card-title>Top performing shops</ion-card-title>
-              <ion-card-subtitle>Ranked by recognized revenue</ion-card-subtitle>
+              <ion-card-title>Top Performing Shops</ion-card-title>
+              <ion-card-subtitle>Ranked by Recognized Revenue</ion-card-subtitle>
             </ion-card-header>
             <ion-card-content>
               <div v-if="shopChart.length" class="ranking-chart" role="img" aria-label="Top shops revenue chart">
@@ -318,18 +318,18 @@ const roleLabel = computed(() => (isOwner.value ? 'Shop owner' : 'Administrator'
 const sectionLabel = computed(() => section.value);
 const title = computed(() =>
   section.value === 'products'
-    ? 'Manage products'
+    ? 'Manage Products'
     : section.value === 'inventory'
-      ? 'Manage inventory'
+      ? 'Manage Inventory'
       : section.value === 'sales'
-        ? 'Sales overview'
+        ? 'Sales Overview'
     : section.value === 'shop'
       ? 'Set up your meat shop'
       : section.value === 'users'
-        ? 'Manage users'
+        ? 'Manage Users'
         : section.value === 'shops'
-          ? 'Review meat shops'
-          : 'Reports and analytics',
+          ? 'Review Meat Shops'
+          : 'Reports and Analytics',
 );
 const description = computed(() =>
   section.value === 'shop'
@@ -729,6 +729,22 @@ onIonViewWillEnter(loadData);
   flex: 0 0 110px;
   margin-right: 0.75rem;
 }
+.inventory-list { display: grid; gap: 0.65rem; }
+.inventory-item {
+  align-items: center;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 0.8rem 1rem;
+}
+.inventory-product { flex: 1 1 auto; min-width: 0; }
+.inventory-product h2, .inventory-product p { margin: 0; }
+.inventory-product h2 { font-size: 1rem; }
+.inventory-product p { color: var(--meatup-muted); font-size: 0.8rem; margin-top: 0.25rem; }
+.inventory-item .stock-input { flex: 0 0 110px; margin: 0; }
+.inventory-item ion-chip { flex: 0 0 auto; margin: 0; }
 .dashboard-content {
   --background: var(--meatup-background);
 }
@@ -953,5 +969,9 @@ ion-card {
     align-items: start;
     flex-direction: column;
   }
+  .inventory-item { align-items: stretch; flex-wrap: wrap; gap: 0.65rem; padding: 0.85rem; }
+  .inventory-product { flex: 1 1 100%; }
+  .inventory-item .stock-input { flex: 1 1 120px; }
+  .inventory-item ion-chip { align-self: center; }
 }
 </style>

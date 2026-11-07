@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-widget">
+  <div ref="widgetRoot" class="chat-widget">
     <button class="chat-fab" type="button" aria-label="Open chats" @click="toggleOpen">
       💬<span v-if="unreadCount" class="chat-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
     </button>
@@ -32,7 +32,14 @@
       <div v-else class="conversation-list">
         <p v-if="!conversations.length" class="empty-chat">No conversations yet. Open a shop or order to start chatting.</p>
         <button v-for="conversation in conversations" :key="conversation.id" class="conversation" type="button" @click="openConversation(conversation)">
-          <div class="chat-avatar"><span>{{ initials(conversation.participants.find((item) => item.uid !== auth.profile?.uid)) }}</span></div>
+          <div class="chat-avatar">
+            <img
+              v-if="conversation.participants.find((item) => item.uid !== auth.profile?.uid)?.profileImage"
+              :src="conversation.participants.find((item) => item.uid !== auth.profile?.uid)?.profileImage"
+              alt=""
+            />
+            <span v-else>{{ initials(conversation.participants.find((item) => item.uid !== auth.profile?.uid)) }}</span>
+          </div>
           <div><strong>{{ conversation.participants.find((item) => item.uid !== auth.profile?.uid)?.fullName }}</strong><p>{{ conversation.lastMessage || 'Start chatting' }}</p></div>
           <b v-if="conversation.unreadCount">{{ conversation.unreadCount }}</b>
         </button>
@@ -56,6 +63,7 @@ const messages = ref<ChatMessage[]>([]);
 const draft = ref('');
 const showProfile = ref(false);
 const messageList = ref<HTMLElement>();
+const widgetRoot = ref<HTMLElement>();
 let stopWatching: (() => void) | undefined;
 const otherParticipant = computed(() => activeConversation.value?.participants.find((item) => item.uid !== auth.profile?.uid));
 const unreadCount = computed(() => conversations.value.reduce((sum, item) => sum + item.unreadCount, 0));
@@ -94,6 +102,9 @@ async function submitMessage(): Promise<void> {
 function initials(participant?: ChatParticipant): string {
   return (participant?.fullName ?? 'User').split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
 }
+function closeOnOutsideClick(event: PointerEvent): void {
+  if (open.value && !widgetRoot.value?.contains(event.target as Node)) open.value = false;
+}
 async function startChat(event: Event): Promise<void> {
   const participant = (event as CustomEvent<ChatParticipant>).detail;
   if (!auth.profile || !participant) return;
@@ -105,10 +116,14 @@ async function startChat(event: Event): Promise<void> {
   await openConversation(conversation);
   open.value = true;
 }
-onMounted(() => window.addEventListener('meatup:start-chat', startChat));
+onMounted(() => {
+  window.addEventListener('meatup:start-chat', startChat);
+  document.addEventListener('pointerdown', closeOnOutsideClick);
+});
 onBeforeUnmount(() => {
   stopWatching?.();
   window.removeEventListener('meatup:start-chat', startChat);
+  document.removeEventListener('pointerdown', closeOnOutsideClick);
 });
 </script>
 
@@ -135,7 +150,9 @@ onBeforeUnmount(() => {
 .message { align-self: flex-start; background: #f1e7e1; border-radius: 12px 12px 12px 2px; font-size: 0.8rem; max-width: 80%; padding: 0.55rem 0.7rem; }
 .message.mine { align-self: flex-end; background: var(--meatup-primary); border-radius: 12px 12px 2px 12px; color: white; }
 .chat-compose { border-top: 1px solid #eadfd8; display: flex; gap: 0.4rem; padding: 0.65rem; }
-.chat-compose input { border: 1px solid #eadfd8; border-radius: 999px; flex: 1; min-width: 0; padding: 0.55rem 0.7rem; }
+.chat-compose input { appearance: none; background: #fff; border: 1px solid #cfc4be; border-radius: 999px; color: var(--meatup-text); flex: 1; min-width: 0; padding: 0.55rem 0.7rem; }
+.chat-compose input::placeholder { color: var(--meatup-muted); opacity: 1; }
+.chat-compose input:focus { border-color: var(--meatup-primary); outline: 2px solid rgb(139 30 36 / 18%); outline-offset: 1px; }
 .chat-compose button { background: var(--meatup-primary); border: 0; border-radius: 999px; color: white; padding: 0 0.8rem; }
 .empty-chat { color: var(--meatup-muted); font-size: 0.8rem; padding: 1.5rem; text-align: center; }
 @media (max-width: 480px) { .chat-widget { bottom: 5.3rem; } }

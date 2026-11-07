@@ -3,7 +3,7 @@
     <ion-content class="dashboard-content">
       <div class="page">
         <p class="eyebrow">{{ isCustomer ? 'YOUR ACTIVITY' : 'FULFILLMENT' }}</p>
-        <h1>{{ isCustomer ? 'Your orders' : 'Manage orders' }}</h1>
+        <h1>{{ isCustomer ? 'Your orders' : 'Manage Orders' }}</h1>
         <p class="intro">
           {{
             isCustomer
@@ -13,10 +13,10 @@
         </p>
         <ion-text v-if="errorMessage" color="danger"><p>{{ errorMessage }}</p></ion-text>
         <div v-if="loading" class="state"><ion-spinner /></div>
-        <ion-list v-else-if="orders.length">
-          <ion-item v-for="order in orders" :key="order.id">
+        <ion-list v-else-if="orders.length" class="orders-list">
+          <ion-item v-for="order in orders" :key="order.id" class="order-item">
             <ion-label>
-              <h2>Order #{{ order.id.slice(0, 8) }}</h2>
+              <h2><span class="order-prefix">Order</span> #{{ order.id.slice(0, 8) }}</h2>
               <p>{{ order.items.length }} item(s) · ₱{{ order.total.toFixed(2) }} · {{ order.fulfillmentMethod }}</p>
             </ion-label>
             <ion-select
@@ -158,5 +158,47 @@ onMounted(load);
 }
 .state ion-icon {
   font-size: 2.5rem;
+}
+.orders-list {
+  background: transparent;
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.order-item {
+  --background: #fff;
+  --border-color: #eee4de;
+  --border-radius: 14px;
+  --inner-padding-end: 0.85rem;
+  --padding-start: 0.9rem;
+  border: 1px solid #eee4de;
+  border-radius: 14px;
+  box-shadow: 0 5px 16px rgb(74 37 22 / 5%);
+}
+.order-item::part(native) { min-height: 88px; }
+.order-item ion-label { min-width: 0; }
+.order-item ion-label h2 { color: var(--meatup-text); font-size: 0.95rem; font-weight: 700; }
+.order-prefix { color: var(--meatup-muted); font-weight: 500; }
+.order-item ion-label p { color: var(--meatup-muted); font-size: 0.78rem; line-height: 1.45; white-space: normal; }
+.order-item ion-select {
+  background: #fff8f0;
+  border: 1px solid #f0ddd2;
+  border-radius: 999px;
+  color: var(--meatup-primary);
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 0.35rem;
+  max-width: 150px;
+  min-height: 2.2rem;
+  padding: 0.25rem 0.65rem;
+}
+.order-item ion-chip { flex: 0 0 auto; font-size: 0.72rem; font-weight: 700; }
+.order-item ion-button { --color: var(--meatup-primary); font-size: 0.76rem; font-weight: 700; margin: 0; }
+@media (max-width: 600px) {
+  .orders-list { gap: 0.65rem; }
+  .order-item::part(native) { flex-wrap: wrap; gap: 0.25rem 0.5rem; padding-bottom: 0.6rem; padding-top: 0.6rem; }
+  .order-item ion-label { flex: 1 1 100%; margin: 0.25rem 0; }
+  .order-item ion-select { margin-left: 0; }
 }
 </style>

@@ -7,7 +7,7 @@
         </ion-buttons>
         <ion-title><AppLogo /></ion-title>
         <ion-buttons slot="end">
-          <ion-button aria-label="Notifications" @click="showNotifications">
+          <ion-button id="notifications-trigger" aria-label="Notifications" @click="showNotifications">
             <ion-icon :icon="notificationsOutline" />
             <ion-badge v-if="unreadCount" color="danger">{{ unreadCount > 9 ? '9+' : unreadCount }}</ion-badge>
           </ion-button>
@@ -20,37 +20,44 @@
     <ion-popover
       :is-open="notificationsOpen"
       class="notifications-popover"
+      trigger="notifications-trigger"
+      reference="trigger"
+      :show-backdrop="false"
       side="bottom"
       alignment="end"
       @did-dismiss="notificationsOpen = false"
     >
       <ion-content>
         <div class="notification-heading">
-          <strong>Notifications</strong>
-          <ion-button v-if="unreadCount" fill="clear" size="small" @click="markNotificationsRead">
-            Mark all read
-          </ion-button>
+          <div>
+            <strong>Notifications</strong>
+            <span>{{ unreadCount ? `${unreadCount} new update${unreadCount === 1 ? '' : 's'}` : 'You’re up to date' }}</span>
+          </div>
+          <ion-button v-if="unreadCount" fill="clear" size="small" @click="markNotificationsRead">Mark all read</ion-button>
         </div>
         <div v-if="!notifications.length" class="notifications-empty">
           <ion-icon :icon="checkmarkCircleOutline" />
           <strong>You're all caught up</strong>
           <span>No new notifications right now.</span>
         </div>
-        <ion-list v-else lines="none">
-          <ion-item
+        <div v-else class="notification-list">
+          <button
             v-for="notification in notifications"
             :key="notification.id"
-            button
+            type="button"
+            class="notification-item"
             :class="{ 'notification-unread': !readNotificationIds.includes(notification.id) }"
             @click="openNotification(notification)"
           >
-            <span v-if="!readNotificationIds.includes(notification.id)" class="unread-dot"></span>
-            <ion-label>
+            <span class="notification-icon"><ion-icon :icon="notificationsOutline" /></span>
+            <span class="notification-copy">
               <h2>{{ notification.title }}</h2>
               <p>{{ notification.message }}</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
+            </span>
+            <span v-if="!readNotificationIds.includes(notification.id)" class="unread-dot" aria-label="Unread"></span>
+            <ion-icon v-else class="read-indicator" :icon="checkmarkCircleOutline" aria-label="Read" />
+          </button>
+        </div>
       </ion-content>
     </ion-popover>
     <ion-menu content-id="main-content">
@@ -262,24 +269,35 @@ async function navigate(href: string): Promise<void> {
 }
 .notifications-popover {
   --width: min(360px, calc(100vw - 1rem));
+  --backdrop-opacity: 0.28;
 }
 .notifications-popover ion-content {
   --background: white;
-  max-height: 430px;
+  --overflow: auto;
+  max-height: min(460px, calc(100dvh - 8rem));
 }
 .notification-heading {
   align-items: center;
+  background: #fff;
   border-bottom: 1px solid #eee2da;
   display: flex;
   justify-content: space-between;
-  padding: 0.75rem 0.85rem 0.55rem;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem 0.75rem;
 }
+.notification-heading div { display: grid; gap: 0.15rem; }
 .notification-heading strong {
   color: var(--meatup-text);
+  font-size: 0.95rem;
+}
+.notification-heading span {
+  color: var(--meatup-muted);
+  font-size: 0.72rem;
 }
 .notification-heading ion-button {
   font-size: 0.72rem;
   margin: 0;
+  white-space: nowrap;
 }
 .notifications-empty {
   align-items: center;
@@ -301,25 +319,48 @@ async function navigate(href: string): Promise<void> {
 .notifications-empty span {
   font-size: 0.78rem;
 }
-.notifications-popover ion-item {
-  --padding-start: 0.85rem;
-  --inner-padding-end: 0.85rem;
+.notification-list { display: grid; }
+.notification-item {
   align-items: flex-start;
+  background: #fff;
   border-bottom: 1px solid #f4ece7;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  transition: background 140ms ease;
+  width: 100%;
 }
-.notifications-popover ion-item.notification-unread {
-  --background: #fff8f0;
+.notification-item:hover,
+.notification-item:focus-visible { background: #fff8f0; }
+.notification-item.notification-unread { background: #fffaf5; }
+.notification-item:focus-visible { outline: 2px solid var(--meatup-primary); outline-offset: -2px; }
+.notification-icon {
+  align-items: center;
+  background: #f8ece7;
+  border-radius: 50%;
+  color: var(--meatup-primary);
+  display: flex;
+  flex: 0 0 2rem;
+  height: 2rem;
+  justify-content: center;
+  margin-top: 0.05rem;
 }
-.notifications-popover ion-label {
-  margin: 0.7rem 0;
-}
-.notifications-popover ion-label h2 {
+.notification-icon ion-icon { font-size: 1rem; }
+.notification-copy { flex: 1; min-width: 0; }
+.notification-copy h2 {
   color: var(--meatup-text);
   font-size: 0.82rem;
   font-weight: 800;
-  margin: 0 0 0.2rem;
+  line-height: 1.35;
+  margin: 0 0 0.22rem;
 }
-.notifications-popover ion-label p {
+.notification-copy p {
   color: var(--meatup-muted);
   font-size: 0.75rem;
   margin: 0;
@@ -330,9 +371,10 @@ async function navigate(href: string): Promise<void> {
   border-radius: 50%;
   flex: 0 0 0.45rem;
   height: 0.45rem;
-  margin: 0.9rem 0.55rem 0 0;
+  margin: 0.2rem 0 0 0.1rem;
   width: 0.45rem;
 }
+.read-indicator { color: #7b9a80; font-size: 0.95rem; margin-top: 0.05rem; }
 .menu-profile {
   background: var(--meatup-primary);
   color: white;

@@ -25,7 +25,7 @@
         <div class="content-grid">
           <ion-card>
             <ion-card-header>
-              <ion-card-title>{{ role === 'admin' ? 'Platform activity' : 'Recent orders' }}</ion-card-title>
+              <ion-card-title>{{ role === 'admin' ? 'Platform Activity' : 'Recent Orders' }}</ion-card-title>
               <ion-card-subtitle>{{
                 role === 'admin' ? 'Monitor the marketplace at a glance' : 'Your latest customer activity'
               }}</ion-card-subtitle>
@@ -44,7 +44,7 @@
               </div>
             </ion-card-content>
           </ion-card>
-          <ion-card>
+          <ion-card v-if="role !== 'admin' && (role !== 'owner' || !setupComplete)">
             <ion-card-header><ion-card-title>Getting started</ion-card-title></ion-card-header>
             <ion-card-content>
               <ion-list lines="none">
@@ -80,14 +80,28 @@ import {
 import { addOutline, checkmarkCircleOutline, receiptOutline } from 'ionicons/icons';
 import { computed, ref } from 'vue';
 
-import { getAdminAnalytics, getOwnerSummary } from '@/services/management';
+import { getAdminAnalytics, getOwnerSummary, listOwnerProducts, listOwnerShops } from '@/services/management';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();
 const ownerSummary = ref({ sales: 0, pendingOrders: 0, products: 0, lowStock: 0 });
+const ownerShops = ref<Awaited<ReturnType<typeof listOwnerShops>>>([]);
+const ownerProducts = ref<Awaited<ReturnType<typeof listOwnerProducts>>>([]);
 const adminSummary = ref({ revenue: 0, orders: 0, customers: 0, shops: 0, products: 0 });
 const role = computed(() => authStore.role ?? 'customer');
 const roleLabel = computed(() => (role.value === 'owner' ? 'Shop owner' : 'Administrator'));
+const setupComplete = computed(() => {
+  const shop = ownerShops.value[0];
+  return Boolean(
+    shop?.name?.trim() &&
+      shop.address?.trim() &&
+      shop.phone?.trim() &&
+      ownerProducts.value.length > 0 &&
+      ownerProducts.value.every(
+        (product) => Number.isFinite(product.stockKg) && Number.isFinite(product.minStockKg),
+      ),
+  );
+});
 const heading = computed(() => (role.value === 'owner' ? 'Run your shop with confidence.' : 'Keep MeatUp moving.'));
 const description = computed(() =>
   role.value === 'owner'
@@ -137,7 +151,14 @@ const stats = computed(() =>
 onIonViewWillEnter(async () => {
   if (!authStore.profile) return;
   if (role.value === 'owner') {
-    ownerSummary.value = await getOwnerSummary(authStore.profile.uid);
+    const [summary, shops, products] = await Promise.all([
+      getOwnerSummary(authStore.profile.uid),
+      listOwnerShops(authStore.profile.uid),
+      listOwnerProducts(authStore.profile.uid),
+    ]);
+    ownerSummary.value = summary;
+    ownerShops.value = shops;
+    ownerProducts.value = products;
   } else if (role.value === 'admin') {
     adminSummary.value = (await getAdminAnalytics()).summary;
   }
