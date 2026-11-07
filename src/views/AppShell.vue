@@ -3,7 +3,7 @@
     <ion-header class="app-header">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-menu-button />
+          <ion-menu-button auto-hide="false" />
         </ion-buttons>
         <ion-title><AppLogo /></ion-title>
         <ion-buttons slot="end">
@@ -249,7 +249,10 @@ function markNotificationsRead(): void {
 onIonViewWillEnter(loadNotifications);
 
 function isActive(href: string): boolean {
-  return route.path === href || route.path.startsWith(`${href}/`);
+  const activeHref = navigation.value
+    .filter((item) => route.path === item.href || route.path.startsWith(`${item.href}/`))
+    .sort((left, right) => right.href.length - left.href.length)[0]?.href;
+  return activeHref === href;
 }
 
 async function navigate(href: string): Promise<void> {
@@ -490,8 +493,12 @@ ion-footer p {
   width: 100%;
 }
 @media (min-width: 768px) {
-  ion-menu-button,
   .mobile-tabs {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  ion-menu-button {
     display: none;
   }
 }
