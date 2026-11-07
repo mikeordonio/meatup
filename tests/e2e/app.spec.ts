@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test('visits the app root url', async ({ page }) => {
+test('redirects unauthenticated visitors to sign in', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('ion-content')).toContainText('Tab 1 page');
+  await expect(page).toHaveURL(/\/login(?:\?.*)?$/);
+  await expect(page.locator('ion-content')).toContainText('Sign in to MeatUp');
 });
