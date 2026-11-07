@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 
 import { useAuthStore } from '@/stores/auth';
 import AppShell from '@/views/AppShell.vue';
+import ProfilePage from '@/views/ProfilePage.vue';
 import CartPage from '@/views/customer/CartPage.vue';
 import CheckoutPage from '@/views/customer/CheckoutPage.vue';
 import ShopDetailsPage from '@/views/customer/ShopDetailsPage.vue';
@@ -35,7 +36,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'checkout', component: CheckoutPage, meta: { roles: ['customer'] } },
       { path: 'orders', component: OrdersPage, meta: { roles: ['customer'] } },
       { path: 'orders/:orderId', component: OrdersPage, meta: { roles: ['customer'] } },
-      { path: 'profile', component: CustomerHomePage, meta: { roles: ['customer'] } },
+      { path: 'profile', component: ProfilePage, meta: { roles: ['customer', 'owner', 'admin'] } },
       { path: 'owner/shop', component: ManagementPage, meta: { roles: ['owner'] } },
       { path: 'owner/:section(products|sales)', component: ManagementPage, meta: { roles: ['owner'] } },
       { path: 'owner/orders', component: OrdersPage, meta: { roles: ['owner'] } },

@@ -75,13 +75,17 @@ import {
   IonLabel,
   IonList,
   IonPage,
+  onIonViewWillEnter,
 } from '@ionic/vue';
 import { addOutline, checkmarkCircleOutline, receiptOutline } from 'ionicons/icons';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
+import { getAdminAnalytics, getOwnerSummary } from '@/services/management';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();
+const ownerSummary = ref({ sales: 0, pendingOrders: 0, products: 0, lowStock: 0 });
+const adminSummary = ref({ revenue: 0, orders: 0, customers: 0, shops: 0, products: 0 });
 const role = computed(() => authStore.role ?? 'customer');
 const roleLabel = computed(() => (role.value === 'owner' ? 'Shop owner' : 'Administrator'));
 const heading = computed(() => (role.value === 'owner' ? 'Run your shop with confidence.' : 'Keep MeatUp moving.'));
@@ -93,18 +97,51 @@ const description = computed(() =>
 const stats = computed(() =>
   role.value === 'owner'
     ? [
-        { label: 'Today’s sales', value: '₱0.00', detail: 'No completed orders', icon: '₱' },
-        { label: 'Pending orders', value: '0', detail: 'Awaiting action', icon: '🧾' },
-        { label: 'Products', value: '0', detail: 'Add your first product', icon: '🥩' },
-        { label: 'Low stock', value: '0', detail: 'All stock levels healthy', icon: '📦' },
+        {
+          label: 'Sales',
+          value: `₱${ownerSummary.value.sales.toFixed(2)}`,
+          detail: ownerSummary.value.sales ? 'Confirmed and active orders' : 'No confirmed orders',
+          icon: '₱',
+        },
+        {
+          label: 'Pending orders',
+          value: String(ownerSummary.value.pendingOrders),
+          detail: ownerSummary.value.pendingOrders ? 'Awaiting action' : 'No pending orders',
+          icon: '🧾',
+        },
+        {
+          label: 'Products',
+          value: String(ownerSummary.value.products),
+          detail: ownerSummary.value.products ? 'Published products' : 'Add your first product',
+          icon: '🥩',
+        },
+        {
+          label: 'Low stock',
+          value: String(ownerSummary.value.lowStock),
+          detail: ownerSummary.value.lowStock ? 'Restock needed' : 'All stock levels healthy',
+          icon: '📦',
+        },
       ]
     : [
-        { label: 'Customers', value: '0', detail: 'Registered accounts', icon: '👥' },
-        { label: 'Active shops', value: '0', detail: 'Approved shops', icon: '🏪' },
-        { label: 'Total orders', value: '0', detail: 'Across the platform', icon: '🧾' },
-        { label: 'Revenue', value: '₱0.00', detail: 'Platform total', icon: '₱' },
+        {
+          label: 'Revenue',
+          value: `₱${adminSummary.value.revenue.toFixed(2)}`,
+          detail: 'Platform total',
+          icon: '₱',
+        },
+        { label: 'Orders', value: String(adminSummary.value.orders), detail: 'Across the platform', icon: '🧾' },
+        { label: 'Customers', value: String(adminSummary.value.customers), detail: 'Registered accounts', icon: '👥' },
+        { label: 'Shops', value: String(adminSummary.value.shops), detail: 'Registered shops', icon: '🏪' },
       ],
 );
+onIonViewWillEnter(async () => {
+  if (!authStore.profile) return;
+  if (role.value === 'owner') {
+    ownerSummary.value = await getOwnerSummary(authStore.profile.uid);
+  } else if (role.value === 'admin') {
+    adminSummary.value = (await getAdminAnalytics()).summary;
+  }
+});
 const steps = computed(() =>
   role.value === 'owner'
     ? ['Complete your shop profile', 'Add your first products', 'Set your inventory levels']

@@ -34,6 +34,12 @@ import '@ionic/vue/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('/service-worker.js');
+  });
+}
+
 const app = createApp(App).use(IonicVue).use(createPinia()).use(router);
 useAuthStore().initialize();
 

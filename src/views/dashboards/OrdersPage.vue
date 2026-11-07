@@ -30,6 +30,22 @@
               }}</ion-select-option>
             </ion-select>
             <ion-chip v-else color="primary">{{ order.status.replaceAll('_', ' ') }}</ion-chip>
+            <ion-button
+              v-if="order.customerId && !isCustomer"
+              fill="clear"
+              size="small"
+              @click="chatWithCustomer(order.customerId)"
+            >
+              Chat
+            </ion-button>
+            <ion-button
+              v-if="order.shopId && isCustomer"
+              fill="clear"
+              size="small"
+              @click="chatWithShop(order.shopId)"
+            >
+              Chat
+            </ion-button>
           </ion-item>
         </ion-list>
         <div v-else class="state">
@@ -62,6 +78,8 @@ import { computed, onMounted, ref } from 'vue';
 
 import type { Order, OrderStatus } from '@/models';
 import { listOwnerShops } from '@/services/management';
+import { getUserProfile } from '@/services/chat';
+import { listShops } from '@/services/marketplace';
 import { listOrders, updateOrderStatus } from '@/services/order-management';
 import { useAuthStore } from '@/stores/auth';
 
@@ -96,6 +114,15 @@ async function load(): Promise<void> {
 async function changeStatus(id: string, status: OrderStatus): Promise<void> {
   await updateOrderStatus(id, status);
   await load();
+}
+async function chatWithCustomer(customerId: string): Promise<void> {
+  const customer = await getUserProfile(customerId);
+  if (customer) window.dispatchEvent(new CustomEvent('meatup:start-chat', { detail: customer }));
+}
+async function chatWithShop(shopId: string): Promise<void> {
+  const shop = (await listShops()).find((item) => item.id === shopId);
+  const owner = shop ? await getUserProfile(shop.ownerId) : undefined;
+  if (owner) window.dispatchEvent(new CustomEvent('meatup:start-chat', { detail: owner }));
 }
 onMounted(load);
 </script>

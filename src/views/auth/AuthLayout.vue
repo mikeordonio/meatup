@@ -44,13 +44,23 @@ import AppLogo from '@/components/AppLogo.vue';
   padding: 2rem;
 }
 
+.auth-hero :deep(.brand) {
+  animation: logo-arrive 700ms ease-out both;
+  justify-content: center;
+  width: 100%;
+}
+
 .auth-hero :deep(.brand-image) {
+  animation: logo-float 4s ease-in-out 900ms infinite;
   background: white;
-  border-radius: 12px;
-  height: 112px;
+  border: 5px solid #ffc98c;
+  border-radius: 50%;
+  box-shadow: 0 12px 28px #43110d33;
+  height: 150px;
   object-position: center;
-  padding: 0.35rem;
-  width: 210px;
+  padding: 0.7rem;
+  transform-origin: center;
+  width: 150px;
 }
 
 .hero-copy {
@@ -92,6 +102,34 @@ h1 span {
   display: flex;
   justify-content: center;
   padding: 2rem 1.25rem;
+}
+
+@keyframes logo-arrive {
+  from {
+    opacity: 0;
+    transform: scale(0.65) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes logo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-hero :deep(.brand),
+  .auth-hero :deep(.brand-image) {
+    animation: none;
+  }
 }
 
 @media (min-width: 768px) {

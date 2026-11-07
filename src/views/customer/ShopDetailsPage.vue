@@ -20,6 +20,7 @@
               <h1>{{ shop.name }}</h1>
               <p>{{ shop.address }}</p>
             </div>
+            <ion-button v-if="shop.ownerId" fill="outline" color="light" @click="chatWithOwner">Chat with owner</ion-button>
           </section>
           <ShopMap
             v-if="typeof shop.latitude === 'number' && typeof shop.longitude === 'number'"
@@ -85,6 +86,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { listProducts, listShops } from '@/services/marketplace';
+import { getUserProfile } from '@/services/chat';
 import { useCartStore } from '@/stores/cart';
 import type { Product, Shop } from '@/models';
 import ShopMap from '@/components/ShopMap.vue';
@@ -134,6 +136,12 @@ async function addToCart(product: Product): Promise<void> {
   }
   const toast = await toastController.create({ message: `${product.name} added to cart`, duration: 1400 });
   await toast.present();
+}
+
+async function chatWithOwner(): Promise<void> {
+  if (!shop.value) return;
+  const owner = await getUserProfile(shop.value.ownerId);
+  if (owner) window.dispatchEvent(new CustomEvent('meatup:start-chat', { detail: owner }));
 }
 </script>
 

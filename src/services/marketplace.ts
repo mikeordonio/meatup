@@ -7,6 +7,7 @@ export async function listShops(): Promise<Shop[]> {
   const snapshot = await getDocs(query(collection(db, 'shops'), where('isApproved', '==', true)));
   return snapshot.docs
     .map((entry) => ({ id: entry.id, ...entry.data() }) as Shop)
+    .filter((shop) => !shop.isSuspended)
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 

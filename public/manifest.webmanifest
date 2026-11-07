@@ -1,0 +1,19 @@
+{
+  "name": "MeatUp Macatoc",
+  "short_name": "MeatUp",
+  "description": "Order fresh meat from local shops in Oriental Mindoro.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fffaf5",
+  "theme_color": "#8b1e24",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

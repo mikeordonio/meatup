@@ -14,7 +14,7 @@
           v-model="search"
           placeholder="Search pork, chicken, or a shop"
           :debounce="300"
-          @ion-input="searchShops"
+          @ion-change="searchShops"
         />
         <div class="section-heading">
           <div>
@@ -32,6 +32,29 @@
             >
           </ion-card>
         </div>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">NEARBY AND APPROVED</p>
+            <h2>Popular shops</h2>
+          </div>
+          <ion-button fill="clear" router-link="/app/shops">View all</ion-button>
+        </div>
+        <div v-if="shopsLoading" class="shop-loading"><ion-spinner /></div>
+        <div v-else-if="featuredShops.length" class="featured-shops">
+          <ion-card v-for="shop in featuredShops" :key="shop.id" button @click="openShop(shop.id)">
+            <div class="featured-image">
+              <img v-if="shop.imageUrl" :src="shop.imageUrl" :alt="shop.name" />
+              <span v-else>🥩</span>
+            </div>
+            <ion-card-content>
+              <strong>{{ shop.name }}</strong>
+              <small>{{ shop.address }}</small>
+              <ion-chip :color="shop.isOpen ? 'success' : 'medium'">{{ shop.isOpen ? 'Open now' : 'Closed' }}</ion-chip>
+            </ion-card-content>
+          </ion-card>
+        </div>
+        <p v-else-if="shopsError" class="home-message">{{ shopsError }}</p>
+        <p v-else class="home-message">Approved shops will appear here soon.</p>
         <div class="section-heading">
           <div>
             <p class="eyebrow">QUICK START</p>
@@ -52,17 +75,23 @@
 </template>
 
 <script setup lang="ts">
-import { IonButton, IonCard, IonCardContent, IonContent, IonIcon, IonPage, IonSearchbar } from '@ionic/vue';
+import { IonButton, IonCard, IonCardContent, IonChip, IonContent, IonIcon, IonPage, IonSearchbar, IonSpinner } from '@ionic/vue';
 import { storefrontOutline } from 'ionicons/icons';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
+import type { Shop } from '@/models';
+import { listShops } from '@/services/marketplace';
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();
 const router = useRouter();
 const search = ref('');
+const shops = ref<Shop[]>([]);
+const shopsLoading = ref(true);
+const shopsError = ref('');
 const firstName = computed(() => authStore.profile?.fullName.split(' ')[0] ?? 'there');
+const featuredShops = computed(() => shops.value.slice(0, 4));
 const categories = [
   { name: 'Pork cuts', icon: '🥩', description: 'Belly, chop, ribs and more', search: 'pork' },
   { name: 'Chicken', icon: '🍗', description: 'Fresh whole and portion cuts', search: 'chicken' },
@@ -76,6 +105,20 @@ function selectCategory(category: string): void {
   search.value = category;
   searchShops();
 }
+
+function openShop(shopId: string): void {
+  void router.push(`/app/shops/${shopId}`);
+}
+
+onMounted(async () => {
+  try {
+    shops.value = await listShops();
+  } catch {
+    shopsError.value = 'Unable to load nearby shops right now.';
+  } finally {
+    shopsLoading.value = false;
+  }
+});
 </script>
 
 <style scoped>
@@ -97,6 +140,62 @@ function selectCategory(category: string): void {
   margin: 0 auto;
   max-width: 1180px;
   padding: 1.5rem 1rem 6rem;
+}
+.shop-loading {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 7rem;
+}
+.featured-shops {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.featured-shops ion-card {
+  --background: white;
+  border: 1px solid #f0e2d9;
+  border-radius: 14px;
+}
+.featured-image {
+  align-items: center;
+  background: #fae7d0;
+  display: flex;
+  height: 5.5rem;
+  justify-content: center;
+  overflow: hidden;
+}
+.featured-image img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+.featured-image span {
+  font-size: 2rem;
+}
+.featured-shops ion-card-content {
+  padding: 0.7rem;
+}
+.featured-shops strong,
+.featured-shops small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.featured-shops small {
+  color: var(--meatup-muted);
+  font-size: 0.72rem;
+  margin-top: 0.25rem;
+}
+.featured-shops ion-chip {
+  font-size: 0.65rem;
+  margin: 0.45rem 0 0;
+}
+.home-message {
+  color: var(--meatup-muted);
+  font-size: 0.85rem;
+  text-align: center;
 }
 .welcome > div:first-child {
   min-width: 0;
@@ -203,6 +302,11 @@ ion-card {
 @media (min-width: 640px) {
   .category-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+  @media (max-width: 639px) {
+    .dashboard-container {
+      padding-top: 2rem;
+    }
   }
   .category-grid ion-card:nth-child(n + 3) {
     display: none;

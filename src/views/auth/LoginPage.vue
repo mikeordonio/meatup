@@ -72,11 +72,14 @@ async function submit(): Promise<void> {
   errorMessage.value = '';
   try {
     await authStore.login(email.value.trim(), password.value);
-    await router.replace('/app');
+    const destination = authStore.role === 'owner' ? '/app/owner' : authStore.role === 'admin' ? '/app/admin' : '/app';
+    await router.replace(destination);
   } catch (error) {
     errorMessage.value =
       error instanceof FirebaseError && error.code === 'auth/invalid-credential'
         ? 'The email or password is incorrect.'
+        : error instanceof Error && error.message === 'This account has been deactivated.'
+          ? error.message
         : 'Unable to sign in. Please try again.';
   } finally {
     loading.value = false;

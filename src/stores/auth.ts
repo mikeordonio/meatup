@@ -42,6 +42,10 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         if (firebaseUser) {
           await loadProfile(firebaseUser.uid);
+          if (profile.value && profile.value.isActive === false) {
+            await signOut(auth);
+            profile.value = null;
+          }
         } else {
           profile.value = null;
         }
@@ -53,7 +57,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(email: string, password: string): Promise<void> {
-    await signInWithEmailAndPassword(auth, email, password);
+    const credentials = await signInWithEmailAndPassword(auth, email, password);
+    await loadProfile(credentials.user.uid);
+    if (profile.value?.isActive === false) {
+      await signOut(auth);
+      profile.value = null;
+      throw new Error('This account has been deactivated.');
+    }
   }
 
   async function register(input: {
@@ -72,6 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
       phone: input.phone,
       role: input.role,
       defaultAddress: '',
+      isActive: true,
     };
     await setDoc(doc(db, 'users', credentials.user.uid), {
       ...userProfile,
